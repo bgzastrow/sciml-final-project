@@ -1,7 +1,9 @@
 Final project for George Biros' Fall 2024 Scientific Machine Learning course. Reproduces the methodology and results of Maes et al.'s 2024 MACE paper.
 
 Create the necessary environment with conda: `conda create --file sciml.yaml`
+
 [Link to powerpoint presentation](https://utexas-my.sharepoint.com/:p:/g/personal/jskeens1_austin_utexas_edu/Ee1_6IZxipdMlmS7NLQug5EBATZghg6B8v0EAlRV8G52Qg?e=mth3j7)
+
 [Link to word document with notes on implementation challenges](https://utexas-my.sharepoint.com/:w:/g/personal/jskeens1_austin_utexas_edu/EYJisQPsRRxLl8d-vFYR64ABq29jrNaJqGgMl2_2cAk3Wg?e=jK2m1i)
 
 Run for the case L96 (Lorenz 96 model) with an example configuration file, `./input/L96/L96_example.in`:

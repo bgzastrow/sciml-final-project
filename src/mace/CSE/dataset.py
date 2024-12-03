@@ -19,9 +19,7 @@ Contains:
 
 NOTE:
 This script only works for this specific dataset.
-
 '''
-
 
 import numpy            as np
 import torch
@@ -181,7 +179,7 @@ class CSEdata(Dataset):
         return torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(Δt_transf)
     
 
-def get_data(type, nb_samples, dt_fract, nb_test, batch_size, kwargs):
+def get_data(nb_samples, dt_fract, nb_test, batch_size, kwargs):
     '''
     Prepare the data for training and validating the emulator.
 
@@ -334,8 +332,7 @@ class CSEmod():
         self.Rstar, self.Tstar, self.Mdot, self.v, self.eps, self.rtol, self.atol = read_input_1Dmodel(inp_path)
 
         ## retrieve abundances
-        abs = read_data_1Dmodel(self.path+abs_path)
-        self.n = abs
+        self.n = read_data_1Dmodel(self.path+abs_path)
 
         ## retrieve physical parameters
         arr = np.loadtxt(self.path+phys_path, skiprows=4, usecols=(0,1,2,3,4))

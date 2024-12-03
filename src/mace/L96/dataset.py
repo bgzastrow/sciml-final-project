@@ -21,7 +21,6 @@ This script only works for this specific dataset.
 
 '''
 
-
 import numpy            as np
 import torch
 from torch.utils.data   import Dataset, DataLoader
@@ -30,10 +29,7 @@ from pathlib import Path
 
 specs_dict, idx_specs = utils.get_specs()
 
-
 ### ----------------------- 1D L96 models ----------------------- ###
-
-
 
 class L96data(Dataset):
     '''
@@ -41,18 +37,18 @@ class L96data(Dataset):
 
     More specifically, this Dataset uses 1D L96 models, and splits them in 0D models.
     '''
-    def __init__(self, nb_samples,dt_fract, nb_test, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm'):
+    def __init__(self, nb_samples, dt_fract, nb_test, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm'):
         '''
         Initialising the attributes of the dataset.
 
         Input:
             - n_L96 [int]: dimension of L96 model to be used for training & validation
-            - dt_fract [float]: fraction of the timestep to use, depends on number of latent species 
-                (see latent dynamics in paper)
+            - dt_fract [float]: fraction of the timestep to use
+            - nb_test [int]: number of models to uses for testing
             - train [boolean]: True if training, False if testing
             - fraction [float]: fraction of the dataset to use for training, 1-fraction is used for validation,
                 default = 0.7
-            - cutoff [float]: cutoff value for the abundances, depends on tolerances of classical chemistry kinetics solver, 
+            - cutoff [float]: cutoff value for the L96 variables,
                 default = 1e-20
             - scale [str]: type of scaling to use, default = 'norm'
 
@@ -75,11 +71,6 @@ class L96data(Dataset):
             6. Split the dataset in train and test set 
         '''
 
-        loc = '/STER/silkem/MACE/'
-        paths = np.loadtxt(loc+'data/paths_data_C.txt', dtype=str)
-
-        ## select a certain number of paths, given by nb_samples
-        np.random.seed(0)
         self.idxs = utils.generate_random_numbers(nb_samples, 0, len(paths))
         self.path = paths[self.idxs]
 
@@ -89,32 +80,17 @@ class L96data(Dataset):
         # self.testpath.append(paths[self.test_idx][0])
         self.nb_test = nb_test
         count = 0
-        while count < nb_test:
-            self.test_idx = utils.generate_random_numbers(1, 0, len(paths))
-            if self.test_idx not in self.idxs:
-                count += 1
-                self.testpath.append(paths[self.test_idx][0])
-
-        # print('test path:', self.testpath)
-        self.M = np.load(loc+'data/M_rate16.npy')       
 
         ## These values are the results from a search through the full dataset; see 'minmax.json' file
-        self.logρ_min = np.log10(0.008223)
-        self.logρ_max = np.log10(5009000000.0)
-        self.logT_min = np.log10(10.)
-        self.logT_max = np.log10(1851.0)   
-        y = 1.e-100   ## this number is added to xi, since it contains zeros    
-        self.logδ_min = np.log10(y)
-        self.logδ_max = np.log10(y+0.9999)
-        self.Av_min = np.log10(2.141e-05)
-        self.Av_max = np.log10(1246.0)
+        self.F_min = np.log10(0.008223)
+        self.F_max = np.log10(5009000000.0)
         self.dt_max = 434800000000.0
         self.dt_fract = dt_fract
         self.n_min = np.log10(cutoff)
-        self.n_max = np.log10(0.85e-1)    ## initial abundance He
+        self.n_max = np.log10(0.85e-1)    
 
-        self.mins = np.array([self.logρ_min, self.logT_min, self.logδ_min, self.Av_min, self.n_min, self.dt_fract])
-        self.maxs = np.array([self.logρ_max, self.logT_max, self.logδ_max, self.Av_max, self.n_max, self.dt_max])
+        self.mins = np.array([self.F_min, self.n_min, self.dt_fract])
+        self.maxs = np.array([self.F_max, self.n_max, self.dt_max])
 
         self.cutoff = cutoff
         self.fraction = fraction
@@ -139,14 +115,14 @@ class L96data(Dataset):
 
         The L96mod class is used to get the data of the 1D model.
         Subsequently, this data is preprocessed:
-            - abundances (n) are
+            - L96 variables (n) are
                 - clipped to the cutoff value
                 - np.log10 is taken 
                 - normalised to [0,1]
             - physical parameters (p) are
                 - np.log10 is taken
                 - normalised to [0,1]
-            - timesteps (Δt) are 
+            - timesteps (dt) are 
                 - scaled to [0,1]
                 - multiplied with dt_fract
 
@@ -156,23 +132,22 @@ class L96data(Dataset):
         # print(idx)
         mod = L96mod(self.path[idx])
 
-        Δt, n, p = mod.split_in_0D()
+        dt, n, p = mod.split_in_0D()
 
         ## physical parameters
         p_transf = np.empty_like(p)
         for j in range(p.shape[1]):
-            # print(j)
             p_transf[:,j] = utils.normalise(np.log10(p[:,j]), self.mins[j], self.maxs[j])
 
-        ## abundances
+        ## transform L96 variables
         n_transf = np.clip(n, self.cutoff, None)
         n_transf = np.log10(n_transf)
-        n_transf = utils.normalise(n_transf, self.n_min, self.n_max)       ## max boundary = rel. abundance of He
+        n_transf = utils.normalise(n_transf, self.n_min, self.n_max)
 
         ## timesteps
-        Δt_transf = Δt/self.dt_max * self.dt_fract             ## scale to [0,1] and multiply with dt_fract
+        dt_transf = dt/self.dt_max * self.dt_fract             ## scale to [0,1] and multiply with dt_fract
 
-        return torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(Δt_transf)
+        return torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(dt_transf)
     
 
 def get_data(nb_samples, dt_fract, nb_test, batch_size, kwargs):
@@ -222,42 +197,32 @@ def get_test_data(testpath, meta, inpackage = False):
     '''
     
     data = L96data(nb_samples=meta['nb_samples'],dt_fract=meta['dt_fract'],nb_test= 100, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm')
-    
     mod = L96mod(testpath, inpackage)
+    dt, n, p = mod.split_in_0D()
 
-    if inpackage:
-        input = mod.get_input()
-
-    Δt, n, p = mod.split_in_0D()
-
-    name = {'path' : testpath[49:-57],
-            'name' : mod.name,
-            'Tstar' : mod.Tstar,
-            'Mdot' : mod.Mdot,
-            'v' : mod.v,
-            'eps' : mod.eps}
+    name = {'F' : data.force}
 
     ## physical parameters
     p_transf = np.empty_like(p)
     for j in range(p.shape[1]):
         p_transf[:,j] = utils.normalise(np.log10(p[:,j]), data.mins[j], data.maxs[j])
 
-    ## abundances
+    ## L96 variables
     n_transf = np.clip(n, data.cutoff, None)
     n_transf = np.log10(n_transf)
-    n_transf = utils.normalise(n_transf, data.n_min, data.n_max)       ## max boundary = rel. abundance of He
+    n_transf = utils.normalise(n_transf, data.n_min, data.n_max)
 
     ## timesteps
-    Δt_transf = Δt/data.dt_max * data.dt_fract             ## scale to [0,1] and multiply with dt_fract
+    dt_transf = dt/data.dt_max * data.dt_fract             ## scale to [0,1] and multiply with dt_fract
 
-    return mod, (torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(Δt_transf)), name
+    return mod, (torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(dt_transf)), name
 
 
 def get_abs(n):
     '''
-    Get the abundances, given the normalised abundances.
+    Get the L96 variables, given the normalized variables.
 
-    This function reverses the normalisation of the abundances.
+    This function reverses the normalization of the L96 variables.
     '''
     cutoff = 1e-20
     nmin = np.log10(cutoff)
@@ -267,7 +232,7 @@ def get_abs(n):
 
 def get_phys(p_transf,dataset):
     '''
-    Reverse the normalisation of the physical parameters.
+    Reverse the normalization of the physical parameters.
     '''
     p = torch.empty_like(p_transf)
     for j in range(p_transf.shape[1]):
@@ -279,93 +244,39 @@ class L96mod():
     '''
     Class to load the L96 model.
     '''
-    def __init__(self, path):
+    def __init__(self, F):
         '''
         Calculate the L96 model for a given number of degrees of freedom.
-
-        The abundances are stored in a file 'csfrac_smooth.out', 
-        the physical parameters are stored in a file 'csphyspar_smooth.out'.
-        The input of the 1D L96 model is stored in a file 'inputChemistry_*.txt'.
-
-        From these paths, retrieve
             - the L96 variables            --> self.n
             - the forcing constant         --> self.force
             - the time steps               --> self.time
-            - input --> self.Rstar, self.Tstar, self.Mdot, self.v, self.eps, self.rtol, self.atol
         '''
-
-        if not inpackage:
-            self.path = '/STER/silkem/CHEM/out/' + path[34:-17]
-            self.model = path[34:-51]
-            self.name = path[-43:-18]
-            inp_path = self.path[:-26]+ 'inputChemistry_'+self.name+'.txt'
-        
-        if inpackage:
-            parentpath = str(Path(__file__).parent)[:-15]
-            self.path = parentpath + 'data/test/' + path +'/'
-            self.model = path[-62:-1]
-            self.name = path
-            inp_path = self.path+'input.txt'
-
-        phys_path = 'csphyspar_smooth.out'
-
-        ## retrieve input
-        self.Rstar, self.Tstar, self.Mdot, self.v, self.eps, self.rtol, self.atol = read_input_1Dmodel(inp_path)
-
-        ## retrieve abundances
-        self.n =
-
-        ## retrieve physical parameters
-        self.radius, self.dens, self.temp, self.Av, self.xi = arr[:,0], arr[:,1], arr[:,2], arr[:,3], arr[:,4]
-        self.time = self.radius/(self.v) 
-                
+        self.n =  
+        self.time =  
 
     def __len__(self):
         '''
         Return the length of the time array, which indicates the length of the 1D model.
         '''
-
         return len(self.time)
 
     def get_time(self):
         '''
-        Return the time array of the 1D model.
+        Return the time array of the model.
         '''
         return self.time
     
     def get_phys(self):
         '''
-        Return the physical parameters of the 1D model.
+        Return the physical parameters of the model.
         '''
-        return self.dens, self.temp, self.xi, self.Av
+        return self.force
     
     def get_abs(self):
         '''
-        Return the abundances of the 1D model.
+        Return the L96 variables.
         '''
         return self.n
-    
-    def get_abs_spec(self, spec):
-        '''
-        Return the abundance of a specific species of the 1D model.
-        '''
-        i = specs_dict[spec]
-        abs = self.get_abs()
-        if abs is not None:
-            abs = abs.T[i]
-        return abs
-
-    def get_path(self):
-        '''
-        Return the path of the 1D model.
-        '''
-        return self.path
-
-    def get_name(self):
-        '''
-        Return the name of the 1D model.
-        '''
-        return self.name
     
     def get_dt(self):
         '''
@@ -377,25 +288,7 @@ class L96mod():
         '''
         Split the 1D model in 0D models.
         '''
-        Δt   = self.get_dt()
+        dt   = self.get_dt()
         n_0D = self.get_abs()
-        y    = 1.e-100  ## this number is added to xi, since it contains zeros
-        p    = np.array([self.get_dens()[:-1], self.get_temp()[:-1], self.get_xi()[:-1]+y, self.get_Av()[:-1]])
-
-        return Δt.astype(np.float64), n_0D.astype(np.float64), p.T.astype(np.float64)
-    
-    def get_input(self):
-        print('-------------------')
-        print('Input of test model')
-        print('-------------------')
-        print('Mdot [Msol/yr]:      ', self.Mdot)
-        print('v [km/s]:            ', self.v/1e5)
-        print('Density proxi Mdot/v:', self.Mdot/self.v)
-        print('')
-        print('Temp at 1e16 cm [K]: ', np.round(utils.temp( self.Tstar, self.eps, 1e16),2))
-        print('Tstar:               ', self.Tstar)
-        print('eps:                 ', self.eps)
-        print('-------------------\n')
-
-        return self.Mdot, self.v, self.Tstar, self.eps
-        
+        p    = np.array(self.force)
+        return dt.astype(np.float64), n_0D.astype(np.float64), p.T.astype(np.float64)

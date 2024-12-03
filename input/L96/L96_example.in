@@ -1,0 +1,21 @@
+## input model
+n_dim       = 1000
+lr          = 1.e-5
+nb_epochs   = 3
+ini_epochs  = 1
+losstype    = abs_idn
+z_dim       = 8
+dim_L96     = 100
+scheme      = loc
+nb_evol     = 1
+nb_hidden   = 1
+ae_type     = simple
+nb_test     = 2
+
+## loss fractions
+abs = 1
+grd = 0 
+idn = 1
+elm = 0
+
+Name = 20240604_133421

@@ -1,0 +1,15 @@
+{
+    "nb_samples": 100,
+    "lr": 1e-05,
+    "epochs": 3,
+    "z_dim": 8,
+    "dt_fract": 0.221,
+    "losstype": "abs_idn",
+    "inputfile": "./input/L96/L96_example.in",
+    "scheme": "loc",
+    "nb_evol": 1,
+    "nb_hidden": 1,
+    "ae_type": "simple",
+    "nb_test": 2,
+    "done": "false"
+}

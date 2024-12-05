@@ -26,8 +26,7 @@ import torch
 from torch.utils.data   import Dataset, DataLoader
 import src.mace.utils   as utils
 from pathlib import Path
-
-specs_dict, idx_specs = utils.get_specs()
+from scipy.integrate import odeint
 
 ### ----------------------- 1D L96 models ----------------------- ###
 
@@ -73,8 +72,8 @@ class L96data(Dataset):
 
         Structure:
             1. Load the paths of the 1D models
-            2. Select a random test path, that is not in the training set 
-                --> self.testpath
+            2. Select a random test force, that is not in the training set 
+                --> self.testF
             3. Set the min and max values of the variables 
                 resulting from a search through the full dataset
                 These values are used for normalisation of the data. 
@@ -85,24 +84,15 @@ class L96data(Dataset):
                 --> self.fraction
             6. Split the dataset in train and test set 
         '''
-
-        self.idxs = utils.generate_random_numbers(nb_samples, 0, len(paths))
-        self.path = paths[self.idxs]
-
-        ## select a random test path, that is not in the training set
-        # self.test_idx = utils.generate_random_numbers(1, 0, len(paths))
-        self.testpath = list()
-        # self.testpath.append(paths[self.test_idx][0])
         self.nb_test = nb_test
         count = 0
+        self.n_L96 = n_L96
 
         ## These values are the results from a search through the full dataset; see 'minmax.json' file
-        Fmin_linear = 0.001
-        Fmax_linear = 1e6
-        self.F_min = np.log10(Fmin_linear)
-        self.F_max = np.log10(Fmax_linear)
-        F_vals = np.logspace(Fmin_linear, Fmax_linear, nb_samples)
-        self.dt_max = 434800000000.0
+        self.F_min = np.log10(0.001)
+        self.F_max = np.log10(1e6)
+        F_vals = np.logspace(self.F_min, self.F_max, nb_samples)
+        self.dt_max = 100
         self.dt_fract = dt_fract
         self.n_min = np.log10(cutoff)
         self.n_max = np.log10(0.85e-1)    
@@ -115,7 +105,7 @@ class L96data(Dataset):
         self.train = train
 
         ## Split in train and test set        
-        N = int(self.fraction*len(self.path))
+        N = int(self.fraction*len(F_vals))
         seed=42 # make this random but repeatable
         rng = np.random.default_rng(seed)
         F_select = rng.choice(len(F_vals), size=len(F_vals), replace=False)
@@ -124,12 +114,16 @@ class L96data(Dataset):
             self.F_vals = F_vals[F_select[:N]]
         else:
             self.F_vals = F_vals[F_select[N:]]
+
+        ## select a random test force, that is not in the training set
+        F_idx_test = rng.choice(np.arange(N, len(F_vals)), size=1)
+        self.testF = F_vals[F_select[F_idx_test]]
             
     def __len__(self):
         '''
         Return the length of the dataset (number of 1D models used for training or validation).
         '''
-        return len(self.path)
+        return len(self.F_vals)
 
     def __getitem__(self, idx):
         '''
@@ -152,14 +146,12 @@ class L96data(Dataset):
         '''
         # print(len(self))
         # print(idx)
-        mod = L96mod(self.F_vals[idx])
+        mod = L96mod(self.F_vals[idx], self.n_L96)
 
         dt, n, p = mod.split_in_0D()
 
         ## physical parameters
-        p_transf = np.empty_like(p)
-        for j in range(p.shape[1]):
-            p_transf[:,j] = utils.normalise(np.log10(p[:,j]), self.mins[j], self.maxs[j])
+        p_transf = np.array(utils.normalise(np.log10(p), self.mins[0], self.maxs[0]))
 
         ## transform L96 variables
         n_transf = np.clip(n, self.cutoff, None)
@@ -205,7 +197,7 @@ def get_data(nb_samples, n_L96, dt_fract, nb_test, batch_size, kwargs):
     return train, valid, data_loader, test_loader
 
 
-def get_test_data(testpath, n_L96, meta, inpackage = False):
+def get_test_data(testF, n_L96, meta, inpackage = False):
     '''
     Get the data of the test 1D model, given a path and meta-data from a training setup.
 
@@ -214,12 +206,12 @@ def get_test_data(testpath, n_L96, meta, inpackage = False):
     The specifics of the 1D test model are stored in the 'name' dictionary.
 
     Input:
-        - testpath [str]: path of the 1D test model
+        - testF [str]: forcing value of the test model
         - meta [dict]: meta data from the training setup
     '''
     
     data = L96data(nb_samples=meta['nb_samples'], n_L96=n_L96, dt_fract=meta['dt_fract'],nb_test= 100, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm')
-    mod = L96mod(testpath, inpackage)
+    mod = L96mod(testF, n_L96)
     dt, n, p = mod.split_in_0D()
 
     name = {'F' : data.force}

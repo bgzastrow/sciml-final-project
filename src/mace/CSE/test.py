@@ -12,9 +12,9 @@ import numpy                as np
 import matplotlib.pyplot    as plt
 import torch
 
-import src.mace.CSE_0D.dataset  as ds
+import src.mace.CSE.dataset  as ds
 import src.mace.utils           as utils
-from src.mace.CSE_0D.plotting   import plot_abs
+from src.mace.CSE.plotting   import plot_abs
 
 def test_step(model, input_data, printing = True):
     '''

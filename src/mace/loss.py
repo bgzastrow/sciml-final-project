@@ -46,7 +46,7 @@ class Loss():
 
         parentpath = str(Path(__file__).parent)[:-8]
 
-        self.M = np.load(parentpath+'data/M_rate16.npy')
+        #self.M = np.load(parentpath+'data/M_rate16.npy')
 
         ## initialise
         self.set_losstype(losstype)
@@ -221,11 +221,12 @@ class Loss():
             idn = idn_loss(n[:-1], p, model)   /self.norm['idn']* self.fract['idn']
         if 'idn' not in self.losstype:
             idn = torch.from_numpy(np.array([0.]))
-
-        if 'elm' in self.losstype:
-            elm = elm_loss(len(n), z_hat,model, self.M) /self.norm['elm']* self.fract['elm']
-        if 'elm' not in self.losstype:
-            elm = torch.from_numpy(np.array([0.]))
+        
+        # elm loss not included in paper and doesnt work for L96
+        #if 'elm' in self.losstype:
+        #    elm = elm_loss(len(n), z_hat,model, self.M) /self.norm['elm']* self.fract['elm']
+        #if 'elm' not in self.losstype:
+        #    elm = torch.from_numpy(np.array([0.]))
 
         # print(grd) 
         loss = abs.mean() + grd.mean() + idn.mean() + elm.mean()
@@ -249,7 +250,7 @@ class Loss():
         abs_loss = self.get_loss('abs')
         grd_loss = self.get_loss('grd')
         idn_loss = self.get_loss('idn')
-        elm_loss = self.get_loss('elm')
+        #elm_loss = self.get_loss('elm')
 
         
         if tot_loss is not None:
@@ -260,15 +261,15 @@ class Loss():
             np.save(path+'/grd.npy', grd_loss)
         if idn_loss is not None:
             np.save(path+'/idn.npy', idn_loss)
-        if elm_loss is not None:
-            np.save(path+'/elm.npy', elm_loss)
+        #if elm_loss is not None:
+        #    np.save(path+'/elm.npy', elm_loss)
 
     def normalise(self):
         ## normalise the losses
         norm = {'abs' :np.mean(self.get_loss('abs')), # type: ignore
                 'grd' :np.mean(self.get_loss('grd')), # type: ignore
-                'idn' :np.mean(self.get_loss('idn')), # type: ignore
-                'elm' :np.mean(self.get_loss('elm'))}   # type: ignore
+                'idn' :np.mean(self.get_loss('idn'))} # type: ignore
+                #'elm' :np.mean(self.get_loss('elm'))}   # type: ignore
         
         self.change_norm(norm) 
         
@@ -309,43 +310,43 @@ def idn_loss(x,p, model):
 
     return loss
 
-def elm_loss(n_dim,z_hat,model, M):
-    '''
-    Return the element conservation loss per x_i.
-        M is at matrix that gives the elemental composition of each species. --> use buildM.py to create this matrix.
-        We know that M x n_hat should be conserved at all times in the network, hence d(M x n_hat)/dt = 0.
-        Since n_hat = D(g(z_hat)), with D the decoder, g=C+Az+Bzz the ODE function,
-            we can rewrite the element conservation loss 
-            as d(M x D(g(z_hat)))/dt = Mgrad(D)g = Mgrad(D)(C+A+B).
-        The einsum summation takes into account the right indexing.
-
-    (For more details, see Maes et al., 2024)
-
-    NOTE:
-        This function is not used in the current version of MACE, since it 
-        is found to be computationally to slow in the way it is currently implemented.
-    '''
-    # tic = time()
-
-    M = torch.from_numpy(M).T     ## eventueel nog specifiek een sparse matrix van maken    
-
-    D = model.decoder
-    A = model.g.A
-    B = model.g.B
-    C = model.g.C
-    dt_dim = z_hat.shape[0]
-    jac_D = jacobian(D,z_hat, strategy='forward-mode', vectorize=True).view(n_dim,dt_dim,dt_dim,-1)
-
-    # print(M.shape, A.shape, B.shape, C.shape, jac_D.shape)
-    
-    L0 = torch.einsum("ZN , Nbci , i   -> bcZ  ", M , jac_D , C).mean()
-    L1 = torch.einsum("ZN , Nbci , ij  -> bcZj ", M , jac_D , A).mean()
-    L2 = torch.einsum("ZN , Nbci , ijk -> bcZjk", M , jac_D , B).mean()
-    # toc = time()
-    # print('time elm loss: ', toc-tic)
-    
-    loss = (L0 + L1 + L2)**2
-    return loss
+#def elm_loss(n_dim,z_hat,model, M):
+#    '''
+#    Return the element conservation loss per x_i.
+#        M is at matrix that gives the elemental composition of each species. --> use buildM.py to create this matrix.
+#        We know that M x n_hat should be conserved at all times in the network, hence d(M x n_hat)/dt = 0.
+#        Since n_hat = D(g(z_hat)), with D the decoder, g=C+Az+Bzz the ODE function,
+#            we can rewrite the element conservation loss 
+#            as d(M x D(g(z_hat)))/dt = Mgrad(D)g = Mgrad(D)(C+A+B).
+#        The einsum summation takes into account the right indexing.
+#
+#    (For more details, see Maes et al., 2024)
+#
+#    NOTE:
+#        This function is not used in the current version of MACE, since it 
+#        is found to be computationally to slow in the way it is currently implemented.
+#    '''
+#    # tic = time()
+#
+#    M = torch.from_numpy(M).T     ## eventueel nog specifiek een sparse matrix van maken    
+#
+#    D = model.decoder
+#    A = model.g.A
+#    B = model.g.B
+#    C = model.g.C
+#    dt_dim = z_hat.shape[0]
+#    jac_D = jacobian(D,z_hat, strategy='forward-mode', vectorize=True).view(n_dim,dt_dim,dt_dim,-1)
+#
+#    # print(M.shape, A.shape, B.shape, C.shape, jac_D.shape)
+#    
+#    L0 = torch.einsum("ZN , Nbci , i   -> bcZ  ", M , jac_D , C).mean()
+#    L1 = torch.einsum("ZN , Nbci , ij  -> bcZj ", M , jac_D , A).mean()
+#    L2 = torch.einsum("ZN , Nbci , ijk -> bcZjk", M , jac_D , B).mean()
+#    # toc = time()
+#    # print('time elm loss: ', toc-tic)
+#    
+#    loss = (L0 + L1 + L2)**2
+#    return loss
 
 
 def initialise():

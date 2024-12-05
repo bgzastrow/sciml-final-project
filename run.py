@@ -17,14 +17,13 @@ start = time()
 now = dt.datetime.now()
 name = str(now.strftime("%Y%m%d")+'_'+now.strftime("%H%M%S"))
 
-
 ## ================================================== INPUT ========
 ## ADJUST THESE PARAMETERS FOR DIFFERENT MODELS
 
 ## READ INPUT FILE
 arg_type = sys.argv[1]
 arg_file = sys.argv[2]
-infile = './input/'+arg_type+'/'+arg_file'.in'
+infile = './input/'+arg_type+'/'+arg_file+'.in'
 path = './models/'+arg_type+'/'+name
 
 ## Set up PyTorch 
@@ -38,8 +37,6 @@ if arg_type != 'CSE' and arg_type != 'L96':
 
 utils.makeOutputDir(path)
 utils.makeOutputDir(path+'/nn')
-meta = input_data.make_meta(path)
-
 
 ## CHOOSE DATASET -- CSE OR L96
 if arg_type == 'CSE':
@@ -57,10 +54,12 @@ elif arg_type == 'L96':
     from src.mace.L96.input import Input
     import src.mace.L96.test as test
     import src.mace.L96.dataset as ds
-    traindata, testdata, data_loader, test_loader = ds.get_data(dt_fract=input_data.dt_fract,
+    N_L96 = 100 # dimension of L96
+    traindata, testdata, data_loader, test_loader = ds.get_data(dt_fract=input_data.dt_fract, n_L96=N,
                                                                 nb_samples=input_data.nb_samples, batch_size=batch_size, 
                                                                 nb_test=input_data.nb_test,kwargs=kwargs)
 
+meta = input_data.make_meta(path)
 ## Make model
 model = mace.Solver(n_dim=input_data.n_dim, p_dim=4,z_dim = input_data.z_dim, 
                     nb_hidden=input_data.nb_hidden, ae_type=input_data.ae_type, 
@@ -164,7 +163,10 @@ for i in tqdm(range(len(traindata.testpath))):
 #     print(i+1,end='\r')
     testpath = traindata.testpath[i]
 
-    err_test, err_evol, step_time, evol_time,n, n_hat, n_evol  = test.test_model(model,testpath, meta, printing = False)
+    if arg_type == 'CSE':
+        err_test, err_evol, step_time, evol_time,n, n_hat, n_evol  = test.test_model(model, testpath, meta, printing = False)
+    elif arg_type == 'L96':
+        err_test, err_evol, step_time, evol_time,n, n_hat, n_evol  = test.test_model(model, N_L96, testpath, meta, printing = False)
 
     sum_err_step += err_test
     sum_err_evol += err_evol

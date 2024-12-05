@@ -13,3 +13,4 @@ or for the CSE case (AGB circumstellar envelope model), `./input/CSE/CSE_example
 `run.py CSE CSE_example.in`
 
 The philosophy here is that we should be able to switch between the models on the fly. I have created L96 and CSE versions of a few files -- `input.py`, `dataset.py`, `test.py` and placed them in L96 and CSE folders within `./src/mace/`. All of the adaptations of these files to the L96 problem are still very much a work in progress.
+

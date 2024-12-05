@@ -36,7 +36,7 @@ class A(nn.Module):
         self.layer_hidden.bias.requires_grad_(True)
         self.LeakyReLU = nn.LeakyReLU(0.2)
         
-    def forward(self, p)
+    def forward(self, p):
         h = self.LeakyReLU(self.layer_in(p))
         h = self.LeakyReLU(self.layer_hidden(h))
         h = self.LeakyReLU(self.layer_out(h))

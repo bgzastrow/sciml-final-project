@@ -133,7 +133,7 @@ def test_evolution(model, input_data, printing = True, start_idx=0):
     return np.array(n_evol).reshape(-1,len(n)), np.array(mace_time)
 
 
-def test_model(model, testpath, meta, specs=[], inpackage = False, printing = True, plotting = False, save = False):
+def test_model(model, N_L96, testpath, meta, specs=[], inpackage = False, printing = True, plotting = False, save = False):
     '''
     Test the model on a test set.
 
@@ -142,7 +142,7 @@ def test_model(model, testpath, meta, specs=[], inpackage = False, printing = Tr
         - plotting: plot the results, default = False
     '''
 
-    model1D, input_data, info = ds.get_test_data(testpath, meta, inpackage = inpackage)
+    model1D, input_data, info = ds.get_test_data(testpath, N_L96, meta, inpackage = inpackage)
     id = info['path'] +'_'+ info['name']
 
     n, n_hat, t, step_time = test_step(model, input_data, printing = printing)

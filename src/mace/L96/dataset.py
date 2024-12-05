@@ -31,17 +31,32 @@ specs_dict, idx_specs = utils.get_specs()
 
 ### ----------------------- 1D L96 models ----------------------- ###
 
+def run_L96(F, t_arr, n_L96):
+    """ Generate an L96 dataset for a given forcing constant and time t 
+        See https://en.wikipedia.org/wiki/Lorenz_96_model
+    """
+    def L96(x, t):
+        """Lorenz 96 model with constant forcing"""
+        return (np.roll(x, -1) - np.roll(x, 2)) * np.roll(x, 1) - x + F
+    
+    x0 = F * np.ones(n_L96)  # Initial state (equilibrium)
+    rand_int = np.random.randint(0, high=n_L96) # perturb a random state
+    x0[rand_int] += F/100  # Add small perturbation from equilibrium
+    x = odeint(L96, x0, t_arr)
+    return x
+
 class L96data(Dataset):
     '''
     Class to initialise the dataset to train & test emulator.
 
     More specifically, this Dataset uses 1D L96 models, and splits them in 0D models.
     '''
-    def __init__(self, nb_samples, dt_fract, nb_test, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm'):
+    def __init__(self, nb_samples, n_L96, dt_fract, nb_test, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm'):
         '''
         Initialising the attributes of the dataset.
 
         Input:
+            - nb_samples [int]: number of 1D models to use for training & validation
             - n_L96 [int]: dimension of L96 model to be used for training & validation
             - dt_fract [float]: fraction of the timestep to use
             - nb_test [int]: number of models to uses for testing
@@ -82,8 +97,11 @@ class L96data(Dataset):
         count = 0
 
         ## These values are the results from a search through the full dataset; see 'minmax.json' file
-        self.F_min = np.log10(0.008223)
-        self.F_max = np.log10(5009000000.0)
+        Fmin_linear = 0.001
+        Fmax_linear = 1e6
+        self.F_min = np.log10(Fmin_linear)
+        self.F_max = np.log10(Fmax_linear)
+        F_vals = np.logspace(Fmin_linear, Fmax_linear, nb_samples)
         self.dt_max = 434800000000.0
         self.dt_fract = dt_fract
         self.n_min = np.log10(cutoff)
@@ -98,10 +116,14 @@ class L96data(Dataset):
 
         ## Split in train and test set        
         N = int(self.fraction*len(self.path))
+        seed=42 # make this random but repeatable
+        rng = np.random.default_rng(seed)
+        F_select = rng.choice(len(F_vals), size=len(F_vals), replace=False)
+        # get a random, non-ordered choice of F values in the train and test datasets
         if self.train:
-            self.path = self.path[:N]
+            self.F_vals = F_vals[F_select[:N]]
         else:
-            self.path = self.path[N:]
+            self.F_vals = F_vals[F_select[N:]]
             
     def __len__(self):
         '''
@@ -130,7 +152,7 @@ class L96data(Dataset):
         '''
         # print(len(self))
         # print(idx)
-        mod = L96mod(self.path[idx])
+        mod = L96mod(self.F_vals[idx])
 
         dt, n, p = mod.split_in_0D()
 
@@ -150,7 +172,7 @@ class L96data(Dataset):
         return torch.from_numpy(n_transf), torch.from_numpy(p_transf), torch.from_numpy(dt_transf)
     
 
-def get_data(nb_samples, dt_fract, nb_test, batch_size, kwargs):
+def get_data(nb_samples, n_L96, dt_fract, nb_test, batch_size, kwargs):
     '''
     Prepare the data for training and validating the emulator.
 
@@ -166,8 +188,8 @@ def get_data(nb_samples, dt_fract, nb_test, batch_size, kwargs):
     kwargs = {'num_workers': 1, 'pin_memory': True} for the DataLoader        
     '''
     ## Make PyTorch dataset
-    train = L96data(nb_samples=nb_samples, dt_fract=dt_fract, nb_test = nb_test   , train = True)
-    valid = L96data(nb_samples=nb_samples, dt_fract=dt_fract, nb_test = nb_samples, train = False)
+    train = L96data(nb_samples=nb_samples, n_L96=n_L96, dt_fract=dt_fract, nb_test = nb_test   , train = True)
+    valid = L96data(nb_samples=nb_samples, n_L96=n_L96, dt_fract=dt_fract, nb_test = nb_samples, train = False)
     
     print('Dataset:')
     print('------------------------------')
@@ -178,12 +200,12 @@ def get_data(nb_samples, dt_fract, nb_test, batch_size, kwargs):
     print('     #  test samples:',train.nb_test)
 
     data_loader = DataLoader(dataset=train, batch_size=batch_size, shuffle=True ,  **kwargs)
-    test_loader = DataLoader(dataset=valid , batch_size=1 , shuffle=False,  **kwargs)
+    test_loader = DataLoader(dataset=valid, batch_size=1 , shuffle=False,  **kwargs)
 
     return train, valid, data_loader, test_loader
 
 
-def get_test_data(testpath, meta, inpackage = False):
+def get_test_data(testpath, n_L96, meta, inpackage = False):
     '''
     Get the data of the test 1D model, given a path and meta-data from a training setup.
 
@@ -196,7 +218,7 @@ def get_test_data(testpath, meta, inpackage = False):
         - meta [dict]: meta data from the training setup
     '''
     
-    data = L96data(nb_samples=meta['nb_samples'],dt_fract=meta['dt_fract'],nb_test= 100, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm')
+    data = L96data(nb_samples=meta['nb_samples'], n_L96=n_L96, dt_fract=meta['dt_fract'],nb_test= 100, train=True, fraction=0.7, cutoff = 1e-20, scale = 'norm')
     mod = L96mod(testpath, inpackage)
     dt, n, p = mod.split_in_0D()
 
@@ -244,15 +266,19 @@ class L96mod():
     '''
     Class to load the L96 model.
     '''
-    def __init__(self, F):
+    def __init__(self, F, n_L96):
         '''
         Calculate the L96 model for a given number of degrees of freedom.
             - the L96 variables            --> self.n
             - the forcing constant         --> self.force
             - the time steps               --> self.time
         '''
-        self.n =  
-        self.time =  
+        # should T_max and dt be adjusted?? these could have effects on success
+        T_max = 100 # maximum time for simulation
+        dt = 0.1 # timestep
+        self.time = np.arange(0.0, T_max, dt)
+        self.n = run_L96(F, self.time, n_L96)
+        self.force = F
 
     def __len__(self):
         '''

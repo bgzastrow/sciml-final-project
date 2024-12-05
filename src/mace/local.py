@@ -35,12 +35,11 @@ def run_epoch(data_loader, model, loss_obj, training):
     status = 0
 
     for i, (n,p,dt) in enumerate(data_loader):
-        
         n  = n.view(n.shape[1], n.shape[2]).to(DEVICE)     ## op een niet-CPU berekenen als dat er is op de device
         p = p.to(DEVICE)
-        if p.ndim == 1:  # 1D tensor
+        if p.ndim == 1 or p.ndim == 2:  # 1D tensor
             p = p.view(-1, 1)  # Reshape to 2D if required
-        elif p.ndim > 1:  # Multi-dimensional tensor
+        if p.ndim > 2:  # Multi-dimensional tensor
             p = p.view(p.shape[1], p.shape[2])
         dt = dt.view(dt.shape[1]).to(DEVICE)
 

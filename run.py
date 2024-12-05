@@ -59,7 +59,12 @@ elif arg_type == 'L96':
 
 meta = input_data.make_meta(path)
 ## Make model
-model = mace.Solver(n_dim=input_data.n_dim, p_dim=4,z_dim = input_data.z_dim, 
+if arg_type == 'CSE':
+    p_dim=4
+elif arg_type == 'L96':
+    p_dim=1
+
+model = mace.Solver(n_dim=input_data.n_dim, p_dim=1,z_dim = input_data.z_dim, 
                     nb_hidden=input_data.nb_hidden, ae_type=input_data.ae_type, 
                     scheme=input_data.scheme, nb_evol=input_data.nb_evol,
                     path = path,

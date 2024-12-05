@@ -48,7 +48,7 @@ class Encoder(nn.Module):
         if nb_hidden == 2:
             # print('in hidden')
             if ae_type == 'simple':
-                # print('in simple')
+                print('in simple')
                 hidden1_dim = 256
                 hidden2_dim = 128
 
@@ -114,7 +114,7 @@ class Decoder(nn.Module):
 
         self.hidden = nn.ModuleList()
         hidden_in_dim = 64
-
+        print(latent_dim)
         self.layer_in = nn.Linear(latent_dim, hidden_in_dim)
 
         if nb_hidden == 1:

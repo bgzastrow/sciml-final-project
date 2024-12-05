@@ -42,7 +42,7 @@ def run_L96(F, t_arr, n_L96):
     rand_int = np.random.randint(0, high=n_L96) # perturb a random state
     x0[rand_int] += F/100  # Add small perturbation from equilibrium
     x = odeint(L96, x0, t_arr)
-    return x
+    return x.T
 
 class L96data(Dataset):
     '''
@@ -190,7 +190,7 @@ def get_data(nb_samples, n_L96, dt_fract, nb_test, batch_size, kwargs):
     print('# validation samples:',len(valid) )
     print('               ratio:',np.round(len(valid)/(len(train)+len(valid)),2))
     print('     #  test samples:',train.nb_test)
-    
+
     data_loader = DataLoader(dataset=train, batch_size=batch_size, shuffle=True ,  **kwargs)
     test_loader = DataLoader(dataset=valid, batch_size=1 , shuffle=False,  **kwargs)
 
@@ -308,5 +308,5 @@ class L96mod():
         '''
         dt   = self.get_dt()
         n_0D = self.get_abs()
-        p    = self.force*np.ones(len(self.time)-1).T
+        p    = self.force*np.ones(len(self.time))
         return dt.astype(np.float64), n_0D.astype(np.float64), p.T.astype(np.float64)

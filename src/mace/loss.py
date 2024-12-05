@@ -229,13 +229,13 @@ class Loss():
         #    elm = torch.from_numpy(np.array([0.]))
 
         # print(grd) 
-        loss = abs.mean() + grd.mean() + idn.mean() + elm.mean()
+        loss = abs.mean() + grd.mean() + idn.mean() #+ elm.mean()
         # print(loss)
         self.adjust_loss('tot', loss.item())
         self.adjust_loss('abs', abs.mean().item())
         self.adjust_loss('grd', grd.mean().item())
         self.adjust_loss('idn', idn.mean().item())
-        self.adjust_loss('elm', elm.mean().item())
+        #self.adjust_loss('elm', elm.mean().item())
 
         return loss
         

@@ -141,7 +141,7 @@ def generate_random_numbers(n, start, end):
 
 
 
-def load_model(n_dim, loc, meta, epoch):
+def load_model(p_dim, n_dim, loc, meta, epoch):
     '''
     Load a MACE model.
 
@@ -157,7 +157,7 @@ def load_model(n_dim, loc, meta, epoch):
 
     # model = mace.Solver(p_dim=4,z_dim = meta['z_dim'], n_dim=n_dim, nb_hidden=meta['nb_hidden'], ae_type=meta['ae_type'], DEVICE = DEVICE)
 
-    model = mace.Solver(p_dim=4,z_dim = meta['z_dim'], n_dim=n_dim, nb_hidden=meta['nb_hidden'], ae_type=meta['ae_type'], scheme = meta['scheme'],nb_evol=meta['nb_evol'] , lr = meta['lr'], path = loc,DEVICE = DEVICE)
+    model = mace.Solver(p_dim=p_dim,z_dim = meta['z_dim'], n_dim=n_dim, nb_hidden=meta['nb_hidden'], ae_type=meta['ae_type'], scheme = meta['scheme'],nb_evol=meta['nb_evol'] , lr = meta['lr'], path = loc,DEVICE = DEVICE)
 
     if epoch >= 0:
         file = 'nn/nn'+str(epoch)+'.pt'

@@ -44,7 +44,7 @@ def test_step(model, input_data, printing = True):
 
     model.eval()
     n     = input_data[0]
-    p     = input_data[1]
+    p     = input_data[1][:,np.newaxis]
     dt    = input_data[2]
 
     # print(n.shape, p.shape,dt.shape)
@@ -142,8 +142,8 @@ def test_model(model, N_L96, testF, meta, printing = True, plotting = False, sav
         - plotting: plot the results, default = False
     '''
 
-    model1D, input_data, info = ds.get_test_data(testF, N_L96, meta, inpackage = inpackage)
-    id = info['path'] +'_'+ info['name']
+    model1D, input_data, info = ds.get_test_data(testF, N_L96, meta)
+    F_val = info['F']
 
     n, n_hat, t, step_time = test_step(model, input_data, printing = printing)
     n_evol, evol_time  = test_evolution(model, input_data, start_idx=0, printing = printing)
@@ -165,16 +165,17 @@ def test_model(model, N_L96, testF, meta, printing = True, plotting = False, sav
         print('\n>>> Plotting...')
 
         ## plotting results for the step test
-        fig_step = plot_abs(model1D, n, n_hat, specs=specs, step = True)
+        fig_step = plot_abs(model1D, n, n_hat, step = True)
         if save == True:
-            plt.savefig(model.path+'figs/step'+id+'.png', dpi=300)
-            print('\nStep test plot saved as', model.path+'step'+id+'.png')
+            breakpoint()
+            plt.savefig(model.path+'figs/step_F_'+str(int(F_val))+'.png', dpi=300)
+            print('\nStep test plot saved as', model.path+'step'+str(int(F_val))+'.png')
         
         ## plotting results for the evolution test
-        fig_evol = plot_abs(model1D, n, n_evol, specs=specs)
+        fig_evol = plot_abs(model1D, n, n_evol)
         if save == True:
-            plt.savefig(model.path+'figs/evol'+id+'.png', dpi=300)
-            print('Evolution test plot saved as', model.path+'evol'+id+'.png')
+            plt.savefig(model.path+'figs/evol_F_'+str(int(F_val))+'.png', dpi=300)
+            print('Evolution test plot saved as', model.path+'evol'+str(int(F_val))+'.png')
 
         plt.show()
 

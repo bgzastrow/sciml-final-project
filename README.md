@@ -28,3 +28,7 @@ Traceback (most recent call last):
 RuntimeError: Dynamo is not supported on Python 3.12+
 ```
 
+
+After training a model, to re-test a model call `test_model.py` with the model type, input file, and the model directory, e.g.:
+`python test_model.py L96 L96_example 20241206_120109`
+

@@ -272,8 +272,6 @@ class Loss():
         
         return norm
 
-    
-
 def abs_loss(x, x_hat):
     '''
     Return the squared absolute loss (abs) per x_i.

@@ -122,7 +122,7 @@ class L96data(Dataset):
 
         ## These values are the results from a search through the full dataset; see 'minmax.json' file
         self.F_min = np.log10(0.001)
-        self.F_max = np.log10(1e6)
+        self.F_max = np.log10(1e2)
         F_vals = np.logspace(self.F_min, self.F_max, nb_samples)
         self.dt_max = 100
         self.dt_fract = dt_fract
@@ -246,12 +246,10 @@ def get_test_data(testF, n_L96, meta):
     mod = L96mod(testF, n_L96)
     dt, n, p = mod.split_in_0D()
 
-    name = {'F' : data.force}
+    name = {'F' : mod.force}
 
     ## physical parameters
-    p_transf = np.empty_like(p)
-    for j in range(p.shape[1]):
-        p_transf[:,j] = utils.normalise(np.log10(p[:,j]), data.mins[j], data.maxs[j])
+    p_transf = utils.normalise(np.log10(p), data.mins[0], data.maxs[0])
 
     ## L96 variables
     n_transf = np.clip(n, data.cutoff, None)

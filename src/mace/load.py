@@ -18,7 +18,7 @@ class Trained_MACE():
     '''
     Class to load a trained MACE model.
     '''
-    def __init__(self, n_dim, outloc, dirname, epoch = -1):
+    def __init__(self, p_dim, n_dim, outloc, dirname, epoch = -1):
         '''
         Load all the components of a MACE model.
 
@@ -41,7 +41,7 @@ class Trained_MACE():
 
         self.meta = utils.load_meta(self.loc)
 
-        self.model, self.num_params = utils.load_model(n_dim, self.loc, self.meta, epoch)
+        self.model, self.num_params = utils.load_model(p_dim, n_dim, self.loc, self.meta, epoch)
 
         self.trainloss = loss.LoadedLoss(self.loc, self.meta, 'train')
 

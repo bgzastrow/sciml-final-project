@@ -133,16 +133,16 @@ def test_evolution(model, input_data, printing = True, start_idx=0):
     return np.array(n_evol).reshape(-1,len(n)), np.array(mace_time)
 
 
-def test_model(model, N_L96, testpath, meta, specs=[], inpackage = False, printing = True, plotting = False, save = False):
+def test_model(model, N_L96, testF, meta, printing = True, plotting = False, save = False):
     '''
     Test the model on a test set.
 
     Input:
-        - testpath: path to the test data
+        - testF: testing force value
         - plotting: plot the results, default = False
     '''
 
-    model1D, input_data, info = ds.get_test_data(testpath, N_L96, meta, inpackage = inpackage)
+    model1D, input_data, info = ds.get_test_data(testF, N_L96, meta, inpackage = inpackage)
     id = info['path'] +'_'+ info['name']
 
     n, n_hat, t, step_time = test_step(model, input_data, printing = printing)
@@ -163,11 +163,6 @@ def test_model(model, N_L96, testpath, meta, specs=[], inpackage = False, printi
         print(' Evolution error:', np.round(err_evol,3))
 
         print('\n>>> Plotting...')
-
-        if len(specs) == 0:
-            print('No species specified, using a default list:')
-            print('     CO, H2O, OH, C2H2, C2H, CH3C5NH+, C10H2+')
-            specs = ['CO', 'H2O','OH',  'C2H2',  'C2H', 'CH3C5NH+', 'C10H2+']
 
         ## plotting results for the step test
         fig_step = plot_abs(model1D, n, n_hat, specs=specs, step = True)

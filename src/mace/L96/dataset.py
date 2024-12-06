@@ -26,7 +26,7 @@ import torch
 from torch.utils.data   import Dataset, DataLoader
 import src.mace.utils   as utils
 from pathlib import Path
-from scipy.integrate import odeint
+from scipy.integrate import odeint, solve_ivp
 
 ### ----------------------- 1D L96 models ----------------------- ###
 
@@ -37,11 +37,43 @@ def run_L96(F, t_arr, n_L96):
     def L96(x, t):
         """Lorenz 96 model with constant forcing"""
         return (np.roll(x, -1) - np.roll(x, 2)) * np.roll(x, 1) - x + F
+
+    def L96_jac(x, t):
+        """Jacobian of the Lorenz 96 model."""
+        J = np.zeros((n_L96, n_L96))
+        for i in range(n_L96):
+            # Indices modulo n_L96
+            im1 = (i - 1) % n_L96
+            ip1 = (i + 1) % n_L96
+            im2 = (i - 2) % n_L96
+
+            # Partial derivatives
+            # d/dx_i: -1
+            J[i, i] = -1
+            # d/dx_(i-1): (x_(i+1) - x_(i-2))
+            J[i, im1] = x[ip1] - x[im2]
+            # d/dx_(i+1): x_(i-1)
+            J[i, ip1] = x[im1]
+            # d/dx_(i-2): -x_(i-1)
+            J[i, im2] = -x[im1]
+
+        return J
     
     x0 = F * np.ones(n_L96)  # Initial state (equilibrium)
     rand_int = np.random.randint(0, high=n_L96) # perturb a random state
-    x0[rand_int] += F/100  # Add small perturbation from equilibrium
-    x = odeint(L96, x0, t_arr)
+    x0[rand_int] += F/4  # Add small perturbation from equilibrium
+    #x = odeint(L96, x0, t_arr, Dfun=L96_jac)
+
+    # test solve_ivp -- RK 4-5 integrator (odeint uses LSODA)
+    # NB
+    t_bounds = [t_arr[0], t_arr[-1]]
+    sol2 = solve_ivp(L96, t_bounds, x0, t_eval=t_arr, rtol=1e-6, atol=1e-9)
+    x = sol2.y.T
+    #print('odeint')
+    #print(x[:,0])
+    #print('solve_ivp')
+    #print(x2[:,0])
+
     return x
 
 class L96data(Dataset):
@@ -197,7 +229,7 @@ def get_data(nb_samples, n_L96, dt_fract, nb_test, batch_size, kwargs):
     return train, valid, data_loader, test_loader
 
 
-def get_test_data(testF, n_L96, meta, inpackage = False):
+def get_test_data(testF, n_L96, meta):
     '''
     Get the data of the test 1D model, given a path and meta-data from a training setup.
 
@@ -266,8 +298,8 @@ class L96mod():
             - the time steps               --> self.time
         '''
         # should T_max and dt be adjusted?? these could have effects on success
-        T_max = 100 # maximum time for simulation
-        dt = 0.1 # timestep
+        T_max = 10 # maximum time for simulation
+        dt = 0.001 # timestep
         self.time = np.arange(0.0, T_max, dt)
         self.n = run_L96(F, self.time, n_L96)
         self.force = F

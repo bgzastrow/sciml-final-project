@@ -154,7 +154,7 @@ input_data.print()
 
 ## Test the model on the test samples
 
-print('\n\n>>> Testing model on',len(traindata.testpath),'test samples ...')
+print('\n\n>>> Testing model on test samples ...')
 
 sum_err_step = 0
 sum_err_evol = 0

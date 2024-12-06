@@ -206,7 +206,6 @@ class Loss():
         Returns:
         - mse of the abs and idn losses
         '''
-
         if 'abs' in self.losstype:
             abs = abs_loss(n_evol, nhat_evol)  /self.norm['abs']* self.fract['abs']
         if 'abs' not in self.losstype:
@@ -221,16 +220,14 @@ class Loss():
             idn = idn_loss(n[:-1], p, model)   /self.norm['idn']* self.fract['idn']
         if 'idn' not in self.losstype:
             idn = torch.from_numpy(np.array([0.]))
-        
+
         # elm loss not included in paper and doesnt work for L96
         #if 'elm' in self.losstype:
         #    elm = elm_loss(len(n), z_hat,model, self.M) /self.norm['elm']* self.fract['elm']
         #if 'elm' not in self.losstype:
         #    elm = torch.from_numpy(np.array([0.]))
 
-        # print(grd) 
         loss = abs.mean() + grd.mean() + idn.mean() #+ elm.mean()
-        # print(loss)
         self.adjust_loss('tot', loss.item())
         self.adjust_loss('abs', abs.mean().item())
         self.adjust_loss('grd', grd.mean().item())
@@ -568,8 +565,4 @@ def plot(train, test, len=10, log = True, ylim = False, limits = None, show = Fa
 
 
     return fig
-    
-
-
-
     

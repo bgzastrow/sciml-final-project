@@ -167,15 +167,14 @@ def test_model(model, N_L96, testF, meta, printing = True, plotting = False, sav
         ## plotting results for the step test
         fig_step = plot_abs(model1D, n, n_hat, step = True)
         if save == True:
-            breakpoint()
-            plt.savefig(model.path+'figs/step_F_'+str(int(F_val))+'.png', dpi=300)
-            print('\nStep test plot saved as', model.path+'step'+str(int(F_val))+'.png')
+            plt.savefig(model.path+'figs/step_F_'+str(int(F_val*1000))+'.png', dpi=300)
+            print('\nStep test plot saved as', model.path+'step'+str(int(F_val*1000))+'.png')
         
         ## plotting results for the evolution test
         fig_evol = plot_abs(model1D, n, n_evol)
         if save == True:
             plt.savefig(model.path+'figs/evol_F_'+str(int(F_val))+'.png', dpi=300)
-            print('Evolution test plot saved as', model.path+'evol'+str(int(F_val))+'.png')
+            print('Evolution test plot saved as', model.path+'evol'+str(int(F_val*1000))+'.png')
 
         plt.show()
 

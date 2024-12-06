@@ -1,0 +1,41 @@
+## input model
+n_dim       = 100
+lr          = 1.e-5
+nb_epochs   = 150
+ini_epochs  = 5
+losstype    = abs_grd_idn
+z_dim       = 8
+dim_L96     = 40
+scheme      = int
+nb_samples  = 120
+nb_evol     = 16
+nb_hidden   = 2
+ae_type     = simple
+nb_test     = 5
+
+## loss fractions
+abs = 0
+grd = 0 
+idn = 0
+elm = 0
+
+
+Name = 20241206_142755
+
+Name = 20241206_143248
+
+Name = 20241206_143304
+
+Name = 20241206_143417
+
+Name = 20241206_143835
+
+Name = 20241206_144342
+
+Name = 20241206_144809
+
+Name = 20241206_145513
+
+Name = 20241206_145604
+
+Name = 20241206_150705

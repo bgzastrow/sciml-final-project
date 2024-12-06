@@ -148,7 +148,7 @@ class L96data(Dataset):
             self.F_vals = F_vals[F_select[N:]]
 
         ## select a random test force, that is not in the training set
-        F_idx_test = rng.choice(np.arange(N, len(F_vals)), size=1)
+        F_idx_test = rng.choice(np.arange(N, len(F_vals)), size=nb_test)
         self.testF = F_vals[F_select[F_idx_test]]
             
     def __len__(self):
@@ -176,8 +176,6 @@ class L96data(Dataset):
 
         Returns the preprocessed data in torch tensors.
         '''
-        # print(len(self))
-        # print(idx)
         mod = L96mod(self.F_vals[idx], self.n_L96)
 
         dt, n, p = mod.split_in_0D()

@@ -122,7 +122,6 @@ train_time = train_time1 + train_time2
 
 ## ================================================== SAVE ========
 
-
 ## losses
 trainloss.save(path+'/train')
 testloss.save(path+'/valid')
@@ -163,7 +162,6 @@ step_calctime = list()
 evol_calctime = list()
 if arg_type == 'CSE':
     for i in tqdm(range(len(traindata.testpath))):
-    #     print(i+1,end='\r')
         testpath = traindata.testpath[i]
         err_test, err_evol, step_time, evol_time,n, n_hat, n_evol  = test.test_model(model, testpath, meta, printing = False)
 

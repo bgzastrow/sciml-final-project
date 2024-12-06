@@ -43,7 +43,11 @@ def evaluate(n,p,dt, model, loss_obj, status):
 
     ## 1.
     n  = n.view(n.shape[1], n.shape[2]).to(DEVICE)     
-    p  = p.view(p.shape[1], p.shape[2]).to(DEVICE) 
+    p = p.to(DEVICE)
+    if p.ndim == 1 or p.ndim == 2:  # 1D tensor
+        p = p.view(-1, 1)  # Reshape to 2D if required
+    if p.ndim > 2:  # Multi-dimensional tensor
+        p = p.view(p.shape[1], p.shape[2])
     dt = dt.view(dt.shape[1]).to(DEVICE)
 
     n0  = n[0:-nb_evol]
@@ -55,7 +59,8 @@ def evaluate(n,p,dt, model, loss_obj, status):
     
     ## 2. Calculate the first step of the evolution
     n_hat, z_hat, modstatus = model(n0[:-1],p0,dt0)   
-    n_hat = n_hat.view(-1, len(n))                 ## remove unnecessary dimension (i.e. batch size = 1)
+    n_hat  = n_hat.view(n_hat.shape[1], n_hat.shape[2])
+    #n_hat = n_hat.view(-1, len(n))                 ## remove unnecessary dimension (i.e. batch size = 1)
     nhat_evol.append(n_hat)                     ## store the first step of the predicted evolution
     n_evol.append(n[0:-nb_evol+0][:-1])         ## store the first step of the evolution
     status += modstatus.sum().item()
@@ -63,7 +68,8 @@ def evaluate(n,p,dt, model, loss_obj, status):
     ## 3. Subsequent steps of the evolution
     for i in range(1,nb_evol):
         n_hat,z_hat, modstatus = model(n_hat,p[i:-nb_evol+i],dt[i:-nb_evol+i])   
-        n_hat = n_hat.view(-1, len(n)) 
+        #n_hat = n_hat.view(-1, len(n)) 
+        n_hat  = n_hat.view(n_hat.shape[1], n_hat.shape[2])
         nhat_evol.append(n_hat)
         n_evol.append(n[i:-nb_evol+i][:-1])
         status += modstatus.sum().item()

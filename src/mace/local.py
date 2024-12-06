@@ -46,7 +46,7 @@ def run_epoch(data_loader, model, loss_obj, training):
         n_hat, z_hat, modstatus = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
 
         ## Calculate losses
-        loss = loss_obj.calc_loss(n,n[1:], n_hat, z_hat, p, model)
+        loss = loss_obj.calc_loss(n, n[1:], n_hat, z_hat, p, model)
         status += modstatus.sum().item()
 
         if training == True:

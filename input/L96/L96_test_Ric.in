@@ -1,0 +1,38 @@
+## input model
+n_dim       = 5
+lr          = 1.e-5
+nb_epochs   = 3
+ini_epochs  = 2
+losstype    = idn
+z_dim       = 4
+dim_L96     = 40
+scheme      = loc
+nb_samples  = 120
+nb_evol     = 16
+nb_hidden   = 2
+ae_type     = simple
+nb_test     = 5
+
+## loss fractions
+abs = 0
+grd = 0 
+idn = 0
+elm = 0
+
+Name = 20241212_155404
+
+Name = 20241212_155404
+
+Name = 20241212_160956
+
+Name = 20241212_165629
+
+Name = 20241212_174543
+
+Name = 20241212_192712
+
+Name = 20241212_195436
+
+Name = 20241212_195732
+
+Name = 20241212_200014

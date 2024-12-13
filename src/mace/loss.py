@@ -162,7 +162,7 @@ class Loss():
         elif type == 'elm':
             return self.elm
         
-    def adjust_loss(self, type,loss):
+    def adjust_loss(self, type, loss):
         '''
         Adjust the loss within one epoch, per type.
         '''
@@ -191,7 +191,7 @@ class Loss():
         return all_loss
     
 
-    def calc_loss(self, n, n_evol, nhat_evol,z_hat, p, model):
+    def calc_loss(self, n, n_evol, nhat_evol, z_hat, p, model):
         '''
         Function to calculate the losses of the model.
 
@@ -207,32 +207,25 @@ class Loss():
         - mse of the abs and idn losses
         '''
         if 'abs' in self.losstype:
-            abs = abs_loss(n_evol, nhat_evol)  /self.norm['abs']* self.fract['abs']
-        if 'abs' not in self.losstype:
+            abs = abs_loss(n_evol, nhat_evol) / self.norm['abs'] * self.fract['abs']
+        else:
             abs = torch.from_numpy(np.array([0.]))
 
         if 'grd' in self.losstype:
-            grd = grd_loss(n_evol,nhat_evol)   /self.norm['grd']* self.fract['grd']
-        if 'grd' not in self.losstype:
+            grd = grd_loss(n_evol, nhat_evol) / self.norm['grd'] * self.fract['grd']
+        else:
             grd = torch.from_numpy(np.array([0.]))
 
         if 'idn' in self.losstype:
-            idn = idn_loss(n[:-1], p, model)   /self.norm['idn']* self.fract['idn']
-        if 'idn' not in self.losstype:
+            idn = idn_loss(n[:-1], p, model) / self.norm['idn'] * self.fract['idn']
+        else:
             idn = torch.from_numpy(np.array([0.]))
 
-        # elm loss not included in paper and doesnt work for L96
-        #if 'elm' in self.losstype:
-        #    elm = elm_loss(len(n), z_hat,model, self.M) /self.norm['elm']* self.fract['elm']
-        #if 'elm' not in self.losstype:
-        #    elm = torch.from_numpy(np.array([0.]))
-
-        loss = abs.mean() + grd.mean() + idn.mean() #+ elm.mean()
+        loss = abs.mean() + grd.mean() + idn.mean()
         self.adjust_loss('tot', loss.item())
         self.adjust_loss('abs', abs.mean().item())
         self.adjust_loss('grd', grd.mean().item())
         self.adjust_loss('idn', idn.mean().item())
-        #self.adjust_loss('elm', elm.mean().item())
 
         return loss
         
@@ -247,7 +240,6 @@ class Loss():
         abs_loss = self.get_loss('abs')
         grd_loss = self.get_loss('grd')
         idn_loss = self.get_loss('idn')
-        #elm_loss = self.get_loss('elm')
 
         
         if tot_loss is not None:
@@ -258,30 +250,29 @@ class Loss():
             np.save(path+'/grd.npy', grd_loss)
         if idn_loss is not None:
             np.save(path+'/idn.npy', idn_loss)
-        #if elm_loss is not None:
-        #    np.save(path+'/elm.npy', elm_loss)
+
 
     def normalise(self):
         ## normalise the losses
         norm = {'abs' :np.mean(self.get_loss('abs')), # type: ignore
                 'grd' :np.mean(self.get_loss('grd')), # type: ignore
                 'idn' :np.mean(self.get_loss('idn'))} # type: ignore
-                #'elm' :np.mean(self.get_loss('elm'))}   # type: ignore
         
         self.change_norm(norm) 
         
         return norm
+
 
 def abs_loss(x, x_hat):
     '''
     Return the squared absolute loss (abs) per x_i.
     '''
     loss = (x-x_hat)**2
-    # print(x.shape, x_hat.shape)
+
     return loss
 
 
-def grd_loss(x,x_hat):
+def grd_loss(x, x_hat):
     '''
     Return the squared gradient loss per x_i, using the gradient function of PyTorch. 
     '''
@@ -290,7 +281,8 @@ def grd_loss(x,x_hat):
     
     return loss
 
-def idn_loss(x,p, model):
+
+def idn_loss(x, p, model):
     '''
     Return the squared identity loss per x_i, 
         i.e. compares x to D(E(x)), 
@@ -304,44 +296,6 @@ def idn_loss(x,p, model):
     loss = (x-D(E(x_E)))**2 
 
     return loss
-
-#def elm_loss(n_dim,z_hat,model, M):
-#    '''
-#    Return the element conservation loss per x_i.
-#        M is at matrix that gives the elemental composition of each species. --> use buildM.py to create this matrix.
-#        We know that M x n_hat should be conserved at all times in the network, hence d(M x n_hat)/dt = 0.
-#        Since n_hat = D(g(z_hat)), with D the decoder, g=C+Az+Bzz the ODE function,
-#            we can rewrite the element conservation loss 
-#            as d(M x D(g(z_hat)))/dt = Mgrad(D)g = Mgrad(D)(C+A+B).
-#        The einsum summation takes into account the right indexing.
-#
-#    (For more details, see Maes et al., 2024)
-#
-#    NOTE:
-#        This function is not used in the current version of MACE, since it 
-#        is found to be computationally to slow in the way it is currently implemented.
-#    '''
-#    # tic = time()
-#
-#    M = torch.from_numpy(M).T     ## eventueel nog specifiek een sparse matrix van maken    
-#
-#    D = model.decoder
-#    A = model.g.A
-#    B = model.g.B
-#    C = model.g.C
-#    dt_dim = z_hat.shape[0]
-#    jac_D = jacobian(D,z_hat, strategy='forward-mode', vectorize=True).view(n_dim,dt_dim,dt_dim,-1)
-#
-#    # print(M.shape, A.shape, B.shape, C.shape, jac_D.shape)
-#    
-#    L0 = torch.einsum("ZN , Nbci , i   -> bcZ  ", M , jac_D , C).mean()
-#    L1 = torch.einsum("ZN , Nbci , ij  -> bcZj ", M , jac_D , A).mean()
-#    L2 = torch.einsum("ZN , Nbci , ijk -> bcZjk", M , jac_D , B).mean()
-#    # toc = time()
-#    # print('time elm loss: ', toc-tic)
-#    
-#    loss = (L0 + L1 + L2)**2
-#    return loss
 
 
 def initialise():
@@ -452,7 +406,7 @@ class LoadedLoss():
         return
 
     
-def plot(train, test, len=10, log = True, ylim = False, limits = None, show = False):
+def plot(train, test, len=10, log=True, ylim=False, limits=None, show=False):
     '''
     Plot the loss of the model as a function of epoch.
     The total loss is plotted, as well as the individual losses.
@@ -515,14 +469,6 @@ def plot(train, test, len=10, log = True, ylim = False, limits = None, show = Fa
         l_idn = mlines.Line2D([],[], color = c_idn, ls = l1, label='IDN',lw = lw2, alpha = 1)
         handles.append(l_idn)
 
-    ## ------------- ELM -------------
-    c_elm = 'darkorchid'
-    if 'elm' in train.losstype:
-        ax1.plot(test.get_loss('elm') , ls = l2, marker = m2, ms=ms, lw = lw, c=c_elm, alpha = a)
-        ax1.plot(train.get_loss('elm'), ls = l1, marker = m1, ms=ms, lw = lw, c=c_elm, alpha = a)
-        l_elm = mlines.Line2D([],[], color = c_elm, ls = l1, label='elm',lw = lw2, alpha = 1)
-        handles.append(l_elm)
-
     ## ------------- ABS -------------
     c_abs = 'cornflowerblue'
     if 'mse' in train.losstype or 'abs' in train.losstype:
@@ -534,16 +480,16 @@ def plot(train, test, len=10, log = True, ylim = False, limits = None, show = Fa
     ## ------------ settings --------------
     plt.rcParams.update({'font.size': 14})    
 
-    if log == True:
+    if log:
         ax1.set_yscale('log') 
 
-    if ylim == True:
-        if limits == None:
+    if ylim:
+        if limits is None:
             ax1.set_ylim(1e-2,1e0)
         else:
             ax1.set_ylim(limits)
 
-    # ax1.set_xlim(5,100)
+    # ax1.set_xlim(5, ax1.get_xlim()[1])
 
     fs= 12
     ax1.set_xlabel('epoch')

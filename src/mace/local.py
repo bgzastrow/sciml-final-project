@@ -34,18 +34,18 @@ def run_epoch(data_loader, model, loss_obj, training):
 
     status = 0
 
-    for i, (n,p,dt) in enumerate(data_loader):
-        n  = n.view(n.shape[1], n.shape[2]).to(DEVICE)     ## op een niet-CPU berekenen als dat er is op de device
+    for i, (n, p, dt) in enumerate(data_loader):
+        n = n.view(n.shape[1], n.shape[2]).to(DEVICE)     ## op een niet-CPU berekenen als dat er is op de device
         p = p.to(DEVICE)
-        if p.ndim == 1 or p.ndim == 2:  # 1D tensor
+        if p.ndim in (1, 2):  # 1D tensor
             p = p.view(-1, 1)  # Reshape to 2D if required
         if p.ndim > 2:  # Multi-dimensional tensor
             p = p.view(p.shape[1], p.shape[2])
         dt = dt.view(dt.shape[1]).to(DEVICE)
 
-        n_hat, z_hat, modstatus = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
+        n_hat, z_hat, modstatus = model(n[:-1], p, dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
 
-        ## Calculate losses
+        # Calculate losses
         loss = loss_obj.calc_loss(n, n[1:], n_hat, z_hat, p, model)
         status += modstatus.sum().item()
 
@@ -56,6 +56,3 @@ def run_epoch(data_loader, model, loss_obj, training):
             optimiser.step()
 
     return i+1, status
-
-
-

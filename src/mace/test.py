@@ -12,9 +12,9 @@ import numpy                as np
 import matplotlib.pyplot    as plt
 import torch
 
-import src.mace.CSE.dataset  as ds
+import src.mace.dataset  as ds
 import src.mace.utils           as utils
-from src.mace.CSE.plotting   import plot_abs
+from src.mace.plotting   import plot_abs
 
 def test_step(model, input_data, printing = True):
     '''
@@ -44,7 +44,7 @@ def test_step(model, input_data, printing = True):
 
     model.eval()
     n     = input_data[0]
-    p     = input_data[1]
+    p     = input_data[1][:,np.newaxis]
     dt    = input_data[2]
 
     # print(n.shape, p.shape,dt.shape)
@@ -130,29 +130,23 @@ def test_evolution(model, input_data, printing = True, start_idx=0):
         print('Solving time [s]:', np.array(mace_time).sum())
         print('Total   time [s]:', toc_tot-tic_tot)
 
-    return np.array(n_evol).reshape(-1,468), np.array(mace_time)
+    return np.array(n_evol).reshape(-1,len(n)), np.array(mace_time)
 
 
-def test_model(model, testpath, meta, specs=[], inpackage = False, printing = True, plotting = False, save = False):
+def test_model(model, N_L96, testF, printing = True, plotting = False, save = False):
     '''
     Test the model on a test set.
 
     Input:
-        - testpath: path to the test data
+        - testF: testing force value
         - plotting: plot the results, default = False
     '''
 
-    model1D, input_data, info = ds.get_test_data(testpath, meta, inpackage = inpackage)
-    id = info['path'] +'_'+ info['name']
+    model1D, input_data, info = ds.get_test_data(testF, N_L96)
+    F_val = info['F']
 
     n, n_hat, t, step_time = test_step(model, input_data, printing = printing)
     n_evol, evol_time  = test_evolution(model, input_data, start_idx=0, printing = printing)
-
-    if printing == True:
-        print('\n>>> Denormalising... ')
-    n = ds.get_abs(n)
-    n_hat = ds.get_abs(n_hat)
-    n_evol = ds.get_abs(n_evol)
 
     err, err_test = utils.error(n, n_hat)
     err, err_evol = utils.error(n, n_evol)
@@ -164,22 +158,17 @@ def test_model(model, testpath, meta, specs=[], inpackage = False, printing = Tr
 
         print('\n>>> Plotting...')
 
-        if len(specs) == 0:
-            print('No species specified, using a default list:')
-            print('     CO, H2O, OH, C2H2, C2H, CH3C5NH+, C10H2+')
-            specs = ['CO', 'H2O','OH',  'C2H2',  'C2H', 'CH3C5NH+', 'C10H2+']
-
         ## plotting results for the step test
-        fig_step = plot_abs(model1D, n, n_hat, specs=specs, step = True)
+        fig_step = plot_abs(model1D, n, n_hat, step = True)
         if save == True:
-            plt.savefig(model.path+'figs/step'+id+'.png', dpi=300)
-            print('\nStep test plot saved as', model.path+'step'+id+'.png')
+            plt.savefig(model.path+'/figs/step_F_'+str(int(F_val*1000))+'.png', dpi=300)
+            print('\nStep test plot saved as', model.path+'step'+str(int(F_val*1000))+'.png')
         
         ## plotting results for the evolution test
-        fig_evol = plot_abs(model1D, n, n_evol, specs=specs)
+        fig_evol = plot_abs(model1D, n, n_evol)
         if save == True:
-            plt.savefig(model.path+'figs/evol'+id+'.png', dpi=300)
-            print('Evolution test plot saved as', model.path+'evol'+id+'.png')
+            plt.savefig(model.path+'/figs/evol_F_'+str(int(F_val))+'.png', dpi=300)
+            print('Evolution test plot saved as', model.path+'evol'+str(int(F_val*1000))+'.png')
 
         plt.show()
 

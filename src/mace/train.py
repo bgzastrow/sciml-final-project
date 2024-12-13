@@ -1,26 +1,30 @@
 '''
 This script contains the core of training a MACE model.
 '''
-
-from time                   import time
-import matplotlib.pyplot    as plt
-import numpy                as np
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
-import src.mace.loss        as loss
+import src.mace.loss as loss
 
 
-def train(model,
-          data_loader, test_loader, 
-          end_epochs, 
-          trainloss, testloss, 
-          start_epochs = 0,                 ## option to restart training from a certain epoch
-          plot = False, log = True, show = False, save_epoch = 10,
-          start_time = time()):
+def train(
+        model,
+        data_loader,
+        test_loader,
+        end_epochs,
+        trainloss,
+        testloss,
+        start_epochs=0,  # option to restart training from a certain epoch
+        plot=False,
+        log=True,
+        show=False,
+        save_epoch=10,
+        ):
     '''
     Train the model for a number of epochs in the local way (for details; see paper).
     
     Input:
-        - model         = ML architecture to be trained    
+        - model         = ML architecture to be trained
         - data_loader   = training data, torch tensor
         - test_loader   = validation data, torch tensor
         - end_epochs    = total number of epochs to train
@@ -34,7 +38,7 @@ def train(model,
         - start_time    = time to start from (default = 0)
 
     Process:
-        1. initialise the optimiser --> Adam optimiser 
+        1. initialise the optimiser --> Adam optimiser
         Per epoch:
         2. train the model
         3. validate the model
@@ -49,7 +53,7 @@ def train(model,
     model.set_optimiser()
     path = model.path
     
-
+    # Choose the training scheme
     if model.scheme == 'loc':
         print('\nLocal training scheme in use.')
         from src.mace.local import run_epoch
@@ -59,56 +63,55 @@ def train(model,
     else:
         print('\nInvalid training scheme input. Please choose either "loc" or "int".')
         
-
     print('\n>>> Training model...')
-
 
     for epoch in range(start_epochs, end_epochs):
 
-        ## --- Training ---
-        
+        # Training
         model.train()
         nb, status = run_epoch(data_loader, model, trainloss, training=True)
-        
-        ## save status
         model.set_status(status/4, 'train')
 
-        ## ---- Validating ----
-
-        model.eval() ## zelfde als torch.no_grad
+        # Validating
+        model.eval()  # same as setting torch.no_grad
         nb, status = run_epoch(test_loader, model, testloss, training=False)
-        
-        ## save status
         model.set_status(status/4, 'test')
         
-        ## --- save model every "save_epoch" epochs ---
-        if (start_epochs+epoch)%save_epoch == 0 and path != None:
-            ## nn
-            torch.save(model.state_dict(),path+'/nn/nn'+str(int((epoch)/save_epoch))+'.pt')
-            trainpath = path+'/train'
-            testpath  = path+'/valid'
-            ## losses
+        # Saving every "save_epoch" epochs
+        if (start_epochs + epoch) % save_epoch == 0 and path is not None:
+
+            # nn
+            torch.save(model.state_dict(), path+'/nn/nn'+str(int((epoch)/save_epoch))+'.pt')
+            trainpath = path + '/train'
+            testpath = path + '/valid'
+
+            # losses
             trainloss.save(trainpath)
             testloss.save(testpath)
-            ## plot, every save this fig is updated
-            loss.plot(trainloss, testloss, log = log, show = show)
+
+            # plot, every save this fig is updated
+            loss.plot(
+                trainloss,
+                testloss,
+                log=log,
+                show=show,
+                )
             plt.savefig(path+'/loss.png')
-        
-        # print(trainloss.get_loss('tot'))
-        print("Epoch", epoch + 1, "complete!", "\tAverage training loss: ", np.round(trainloss.get_loss('tot')[epoch], 5), "\tAverage validation loss: ", np.round(testloss.get_loss('tot')[epoch],5))
-        
-        calc_time = (time()-start_time)     ## in seconds
-        if calc_time < 60.:
-            print("              time [secs]: ", np.round(calc_time,2))
-        elif calc_time >= 60.:
-            print("              time [mins]: ", np.round(calc_time/60.,2))
-        elif calc_time > 3600.:
-            print("              time [hours]: ", np.round(calc_time/(60.*60.),2))
-    
+
+        avg_train_loss = np.round(trainloss.get_loss('tot')[epoch], 5)
+        avg_test_loss = np.round(testloss.get_loss('tot')[epoch], 5)
+        print(f"Epoch {epoch + 1} complete! \tAverage training loss: {avg_train_loss} \tAverage validation loss: {avg_test_loss}")
+
     print('\n \tDONE!')
 
-    if plot == True:
+    if plot:
         print('\n >>> Plotting...')
-        loss.plot(trainloss, testloss, ylim = False, log = log, show = show)
+        loss.plot(
+            trainloss,
+            testloss,
+            ylim=False,
+            log=log,
+            show=show,
+            )
 
-    return 
+    return

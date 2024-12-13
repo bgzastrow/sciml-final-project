@@ -48,9 +48,9 @@ if arg_type == 'CSE':
                                                                 nb_samples=input_data.nb_samples, batch_size=batch_size, 
                                                                 nb_test=input_data.nb_test,kwargs=kwargs)
 elif arg_type == 'L96':
-    from src.mace.L96.input import Input
-    import src.mace.L96.test as test
-    import src.mace.L96.dataset as ds
+    from src.mace.l96.input import input
+    import src.mace.l96.test as test
+    import src.mace.l96.dataset as ds
     input_data = Input(infile, name)
     input_data.print()
     traindata, testdata, data_loader, test_loader = ds.get_data(dt_fract=input_data.dt_fract, n_L96=input_data.n_dim,

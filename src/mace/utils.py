@@ -59,10 +59,11 @@ def error(n,n_hat):
         - err: the error per species, for each sample
         - the summed error, averaged by the number of samples in n
     '''
-    err = (np.log10(n[:])-np.log10(n_hat))[:]/np.log10(n[:][:])
+    # err = (np.log10(n[:])-np.log10(n_hat))[:]/np.log10(n[:][:])
+    err = (n[:] - n_hat)[:] / n[:][:]
     nb_samples = len(n[:,0])
 
-    return err, np.abs(err).sum()/nb_samples
+    return err, np.abs(err).sum() / nb_samples
 
 
 def get_absolute_residuals(real, pred):
@@ -194,4 +195,13 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+
+def print_time(time_in_seconds):
+    """Prints time in seconds, minutes, or hours."""
+    if time_in_seconds < 60:
+            print('Total time [secs]:', np.round(time_in_seconds, 2))
+    elif time_in_seconds >= 60:
+            print('Total time [mins]:', np.round(time_in_seconds/60, 2))
+    elif time_in_seconds >= 3600:
+            print('Total time [hours]:', np.round(time_in_seconds/3600, 2))
 

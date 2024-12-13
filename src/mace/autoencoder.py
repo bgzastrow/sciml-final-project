@@ -6,11 +6,11 @@ Classes:
     - Decoder: neural network for the decoder
     - Autoencoder: neural network for the autoencoder
 '''
-
-import torch.nn          as nn
+import torch.nn as nn
 import torch
 
 torch.set_default_dtype(torch.float64)
+
 
 class Encoder(nn.Module):
     """
@@ -36,38 +36,16 @@ class Encoder(nn.Module):
                 input_dim --> 512 --> 256 --> 64 --> latent_dim        
         '''
         super(Encoder, self).__init__()
-        hidden_out_dim = 64
+        # hidden_out_dim = 64
+        hidden_out_dim = 8
 
         self.hidden = nn.ModuleList()
 
-        if nb_hidden == 1:
-            hidden1_dim = 264
-            self.layer_in = nn.Linear(input_dim, hidden1_dim)
-            layer = nn.Linear(hidden1_dim, hidden_out_dim)
-            self.hidden.append(layer)
-        if nb_hidden == 2:
-            # print('in hidden')
-            if ae_type == 'simple':
-                print('in simple')
-                hidden1_dim = 256
-                hidden2_dim = 128
-
-                self.layer_in = nn.Linear(input_dim, hidden1_dim)
-                
-                layer = nn.Linear(hidden1_dim, hidden2_dim)
-                self.hidden.append(layer)
-                layer = nn.Linear(hidden2_dim, hidden_out_dim)
-                self.hidden.append(layer)
-            if ae_type == 'complex':
-                hidden1_dim = 512
-                hidden2_dim = 256
-
-                self.layer_in = nn.Linear(input_dim, hidden1_dim)
-                
-                layer = nn.Linear(hidden1_dim, hidden2_dim)
-                self.hidden.append(layer)
-                layer = nn.Linear(hidden2_dim, hidden_out_dim)
-                self.hidden.append(layer)
+        # hidden1_dim = 264
+        hidden1_dim = 16
+        self.layer_in = nn.Linear(input_dim, hidden1_dim)
+        layer = nn.Linear(hidden1_dim, hidden_out_dim)
+        self.hidden.append(layer)
 
         self.layer_out = nn.Linear(hidden_out_dim, latent_dim)
         
@@ -86,6 +64,7 @@ class Encoder(nn.Module):
             h = self.LeakyReLU(layer(h))
         h = self.Tanh(self.layer_out(h))
         return h
+
 
 class Decoder(nn.Module):
     """
@@ -113,36 +92,16 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         self.hidden = nn.ModuleList()
-        hidden_in_dim = 64
+        # hidden_in_dim = 64
+        hidden_in_dim = 8
         print(latent_dim)
         self.layer_in = nn.Linear(latent_dim, hidden_in_dim)
 
-        if nb_hidden == 1:
-            hidden1_dim = 264
-            layer = nn.Linear(hidden_in_dim, hidden1_dim)
-            self.hidden.append(layer)
-            self.layer_out = nn.Linear(hidden1_dim, output_dim)
-
-        if nb_hidden == 2:
-            if ae_type == 'simple':
-                hidden2_dim = 256
-                hidden1_dim = 128
-
-                layer = nn.Linear(hidden_in_dim, hidden1_dim)
-                self.hidden.append(layer)
-                layer = nn.Linear(hidden1_dim, hidden2_dim)
-                self.hidden.append(layer)
-                self.layer_out = nn.Linear(hidden2_dim, output_dim)
-
-            if ae_type == 'complex':
-                hidden2_dim = 512
-                hidden1_dim = 256
-
-                layer = nn.Linear(hidden_in_dim, hidden1_dim)
-                self.hidden.append(layer)
-                layer = nn.Linear(hidden1_dim, hidden2_dim)
-                self.hidden.append(layer)
-                self.layer_out = nn.Linear(hidden2_dim, output_dim)
+        # hidden1_dim = 264
+        hidden1_dim = 16
+        layer = nn.Linear(hidden_in_dim, hidden1_dim)
+        self.hidden.append(layer)
+        self.layer_out = nn.Linear(hidden1_dim, output_dim)
         
         self.LeakyReLU = nn.LeakyReLU(0.2)
         
@@ -158,17 +117,18 @@ class Decoder(nn.Module):
         h = self.LeakyReLU(self.layer_out(h))
         return h
 
+
 class Autoencoder(nn.Module):
     """
     Autoencoder.
 
     Combines the Encoder and Decoder.
     """
-    def __init__(self, Encoder, Decoder):
+    def __init__(self, encoder, decoder):
         super(Autoencoder, self).__init__()
         
-        self.Encoder = Encoder
-        self.Decoder = Decoder
+        self.Encoder = encoder
+        self.Decoder = decoder
                 
     def forward(self, x):
         '''
@@ -177,6 +137,7 @@ class Autoencoder(nn.Module):
         h = self.Encoder(x)
         h = self.Decoder(h)
         return h
+
 
 def get_overview(coder):
     '''
@@ -205,6 +166,7 @@ def get_overview(coder):
 
     return (input_nodes, hidden_nodes, output_nodes), (input_params,hidden_params,output_params)
 
+
 def print_overview(coder):
     '''
     Print the overview of the given coder.
@@ -225,6 +187,7 @@ def print_overview(coder):
 
     return
 
+
 def overview(ae):
     '''
     Print the overview of the given autoencoder (ae).
@@ -237,6 +200,3 @@ def overview(ae):
     print_overview(ae.Decoder)
     print('___________________________________\n')
     return
-    
-
-

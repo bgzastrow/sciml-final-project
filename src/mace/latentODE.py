@@ -111,12 +111,9 @@ class G(nn.Module):
         self.A = nn.Parameter(torch.randn(z_dim, z_dim).requires_grad_(True))
         self.B = nn.Parameter(torch.randn(z_dim, z_dim, z_dim).requires_grad_(True))
 
-    def forward(self,t, z):     ## t has also be given to the forward function, in order that the ODE solver can read it properly
+    def forward(self, t, z):     ## t has also be given to the forward function, in order that the ODE solver can read it properly
         '''
         Forward function of the G class, einstein summations over indices.
         '''
         return self.C + torch.einsum("ij, bj -> bi", self.A, z) + torch.einsum("ijk, bj, bk -> bi", self.B, z, z)  ## b is the index of the batchsize
         
-
-
-

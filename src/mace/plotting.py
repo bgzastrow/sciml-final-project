@@ -49,7 +49,7 @@ def plot_abs(model1D, n, n_hat, step = False):
         
     err, err_mean = utils.error(n, n_hat)
 
-    for idx in range(min(n_hat.shape[0],5)):
+    for idx in range(min(n_hat.shape[1], 5)):
         if step == True:
             ls = 'none'
             marker = 'o'
@@ -60,6 +60,7 @@ def plot_abs(model1D, n, n_hat, step = False):
         line, = ax1.plot(time,n_hat[:,idx], ls =ls, marker = marker, label = f'{idx}', ms = ms,  lw = lw)
         ## real abundances
         ax1.plot(time,n[:,idx], '--',  lw = lw, color = line.get_color(), alpha = a)
+        # line, = ax1.plot(time,n[:,idx], '--',  lw = lw, alpha = a)
         ## relative error
         ax2.plot(time,err[:,idx], '-', label = f'{idx}', ms = ms, lw = lw, color = line.get_color())
     
@@ -71,10 +72,10 @@ def plot_abs(model1D, n, n_hat, step = False):
     ax2.set_xlabel('time [sec]', fontsize = fs)
 
     for ax in axs:
-        ax.set_yscale('log')
-        ax.set_xscale('log')
+        # ax.set_yscale('log')
+        # ax.set_xscale('log')
         ax.tick_params(labelsize = 14)
-    ax2.set_yscale('linear')
+    # ax2.set_yscale('linear')
     ax1.set_xticklabels([])
     ax1.grid(True, linestyle = '--', linewidth = 0.2)
     ax2.grid(True, linestyle = '--', linewidth = 0.2)

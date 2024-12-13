@@ -51,7 +51,7 @@ def test_step(model, input_data, printing = True):
     
     tic = time()
     with torch.no_grad():
-        n_hat, z_hat, modstatus = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
+        n_hat = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
     toc = time()
 
     solve_time = toc-tic
@@ -106,7 +106,7 @@ def test_evolution(model, input_data, printing = True, start_idx=0):
     ## first step of the evolution
     tic = time()
     with torch.no_grad():
-        n_hat, z_hat,modstatus = model(n.view(1, -1),p[start_idx].view(1, -1),dt[start_idx].view(-1))    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
+        n_hat = model(n.view(1, -1),p[start_idx].view(1, -1),dt[start_idx].view(-1))    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
     toc = time()
 
     n_evol.append(n_hat.detach().numpy())
@@ -118,7 +118,7 @@ def test_evolution(model, input_data, printing = True, start_idx=0):
     for i in range(start_idx+1,len(dt)):
         tic = time()
         with torch.no_grad():   
-            n_hat,z_hat, modstatus = model(n_hat.view(1, -1),p[i].view(1, -1),dt[i].view(-1))    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches
+            n_hat = model(n_hat.view(1, -1),p[i].view(1, -1),dt[i].view(-1))    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches
         toc = time()
         n_evol.append(n_hat.detach().numpy())
         solve_time = toc-tic

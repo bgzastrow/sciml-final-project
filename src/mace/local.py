@@ -43,11 +43,10 @@ def run_epoch(data_loader, model, loss_obj, training):
             p = p.view(p.shape[1], p.shape[2])
         dt = dt.view(dt.shape[1]).to(DEVICE)
 
-        n_hat, z_hat, modstatus = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
+        n_hat = model(n[:-1],p,dt)    ## Give to the solver abundances[0:k] with k=last-1, without disturbing the batches 
 
         ## Calculate losses
-        loss = loss_obj.calc_loss(n, n[1:], n_hat, z_hat, p, model)
-        status += modstatus.sum().item()
+        loss = loss_obj.calc_loss(n, n[1:], n_hat, p, model)
 
         if training == True:
             ## Backpropagation

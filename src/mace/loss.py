@@ -191,7 +191,7 @@ class Loss():
         return all_loss
     
 
-    def calc_loss(self, n, n_evol, nhat_evol,z_hat, p, model):
+    def calc_loss(self, n, n_evol, nhat_evol, p, model):
         '''
         Function to calculate the losses of the model.
 

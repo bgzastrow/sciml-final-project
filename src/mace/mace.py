@@ -167,21 +167,21 @@ class Solver(nn.Module):
         enc_time = toc-tic
         
         ## Create initial value problem
-        problem = to.InitialValueProblem(
-            y0     = z_0.to(self.DEVICE),  
-            t_eval = tstep.view(z_0.shape[0],-1).to(self.DEVICE),
-        )
+        # problem = to.InitialValueProblem(
+        #     y0     = z_0.to(self.DEVICE),  
+        #     t_eval = tstep.view(z_0.shape[0],-1).to(self.DEVICE),
+        # )
 
-        ## Solve initial value problem. Details are set in the __init__() of this class.
-        tic = time()
-        solution = self.jit_solver.solve(problem, args=p)
-        toc = time()
-        solve_time = toc-tic
-        z_s = solution.ys.view(-1, self.z_dim)  ## want batches 
+        # ## Solve initial value problem. Details are set in the __init__() of this class.
+        # tic = time()
+        # solution = self.jit_solver.solve(problem, args=p)
+        # toc = time()
+        # solve_time = toc-tic
+        # z_s = solution.ys.view(-1, self.z_dim)  ## want batches 
 
         ## Decode the resulting values from latent space z_s back to physical space
         tic = time()
-        n_s_ravel = self.decoder(z_s)
+        n_s_ravel = self.decoder(z_0)
         toc = time()
         dec_time = toc-tic
 
@@ -192,7 +192,7 @@ class Solver(nn.Module):
         # print('solver  time:', solve_time)
         # print('decoder time:', dec_time)
 
-        return n_s, z_s, solution.status
+        return n_s
 
         
         

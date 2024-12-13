@@ -58,28 +58,26 @@ def evaluate(n,p,dt, model, loss_obj, status):
     n_evol    = list()  ## list to split up real abundances to compare with predicted ones
     
     ## 2. Calculate the first step of the evolution
-    n_hat, z_hat, modstatus = model(n0[:-1],p0,dt0)   
+    n_hat = model(n0[:-1],p0,dt0)
     n_hat  = n_hat.view(n_hat.shape[1], n_hat.shape[2])
     #n_hat = n_hat.view(-1, len(n))                 ## remove unnecessary dimension (i.e. batch size = 1)
     nhat_evol.append(n_hat)                     ## store the first step of the predicted evolution
     n_evol.append(n[0:-nb_evol+0][:-1])         ## store the first step of the evolution
-    status += modstatus.sum().item()
 
     ## 3. Subsequent steps of the evolution
     for i in range(1,nb_evol):
-        n_hat,z_hat, modstatus = model(n_hat,p[i:-nb_evol+i],dt[i:-nb_evol+i])   
+        n_hat = model(n_hat,p[i:-nb_evol+i],dt[i:-nb_evol+i])   
         #n_hat = n_hat.view(-1, len(n)) 
         n_hat  = n_hat.view(n_hat.shape[1], n_hat.shape[2])
         nhat_evol.append(n_hat)
         n_evol.append(n[i:-nb_evol+i][:-1])
-        status += modstatus.sum().item()
 
     ## 4. 
     nhat_evol = torch.stack(nhat_evol).permute(1,0,2)
     n_evol = torch.stack(n_evol).permute(1,0,2)
 
     ## 5.
-    loss = loss_obj.calc_loss(n, n_evol, nhat_evol, z_hat, p, model)
+    loss = loss_obj.calc_loss(n, n_evol, nhat_evol, p, model)
 
     ## 6.
     return loss, status

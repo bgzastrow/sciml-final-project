@@ -152,7 +152,7 @@ def load_model(p_dim, n_dim, loc, meta, epoch):
         meta; meta data from the model, needed to know the hyperparameters
     
     '''
-    cuda   = False
+    cuda   = True
     DEVICE = torch.device("cuda" if cuda else "cpu")
 
     # model = mace.Solver(p_dim=4,z_dim = meta['z_dim'], n_dim=n_dim, nb_hidden=meta['nb_hidden'], ae_type=meta['ae_type'], DEVICE = DEVICE)
